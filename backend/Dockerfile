@@ -1,21 +1,47 @@
-FROM python:3.11-slim
+# One-command local/staging deploy: `docker compose up --build`
+# Needs backend/.env to exist first (copy from backend/.env.example).
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
 
-WORKDIR /app
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    ports:
+      # Host 8000 -> container 10000, matching the Dockerfile's new
+      # default fallback port (used when Docker Compose doesn't set a
+      # PORT env var, unlike Render which always sets one itself).
+      - "8000:10000"
+    env_file:
+      - backend/.env
+    environment:
+      # Overrides backend/.env's REDIS_HOST so the backend reaches the
+      # "redis" container by its service name, not localhost.
+      REDIS_HOST: redis
+    depends_on:
+      - redis
+    volumes:
+      - chroma-data:/app/backend/app/vectorstore/chroma_db
+      - uploads-data:/app/backend/uploads
 
-# Install Tesseract OCR
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    tesseract-ocr \
-    && rm -rf /var/lib/apt/lists/*
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8000
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
 
-# Install Python dependencies
-COPY backend/requirements.txt backend/requirements.txt
-
-RUN pip install --no-cache-dir -r backend/requirements.txt
-
-# Copy backend code
-COPY backend backend
-
-EXPOSE 10000
-
-# Start FastAPI
-CMD ["sh", "-c", "uvicorn backend.app.main:app --host 0.0.0.0 --port ${PORT:-10000}"]
+volumes:
+  redis-data:
+  chroma-data:
+  uploads-data:
