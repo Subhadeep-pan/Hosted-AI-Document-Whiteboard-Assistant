@@ -1,0 +1,60 @@
+# Runs on every push and pull request - catches broken code BEFORE it
+# reaches main (and before deploy.yml would ship it). This is real CI:
+# it actually installs dependencies and imports/builds the app, not
+# just a syntax lint.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install backend dependencies
+        run: |
+          pip install --extra-index-url https://download.pytorch.org/whl/cpu -r backend/requirements.txt
+
+      - name: Import the FastAPI app
+        # Confirms every router/service wires together correctly -
+        # dummy keys are fine here, this only checks the app OBJECT
+        # builds without error, it doesn't call any real API.
+        env:
+          GEMINI_API_KEY: dummy-for-ci
+          TAVILY_API_KEY: dummy-for-ci
+        run: |
+          python -c "from backend.app.main import app; print('Backend imports OK -', len(app.routes), 'routes')"
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npx eslint src
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_API_URL: https://placeholder-for-ci-build.example.com

@@ -1,0 +1,55 @@
+# Render Blueprint - https://render.com/docs/blueprint-spec
+#
+# Deploy: push this repo to GitHub, then in Render's dashboard choose
+# "New > Blueprint" and point it at the repo. Render reads this file
+# and creates both services automatically.
+#
+# After the first deploy, go to the "chat-backend" service > Environment
+# and fill in the secret values marked "sync: false" below (Render
+# won't let you commit real secrets into this file, correctly).
+
+services:
+  - type: web
+    name: chat-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    plan: starter  # Free tier (512MB RAM) is NOT enough for this stack
+                    # (PyTorch + transformers + ChromaDB) - use at least
+                    # Starter. Upgrade further if you see OOM restarts.
+    healthCheckPath: /
+    autoDeploy: true  # redeploys automatically on every push to main
+    disk:
+      name: chat-data
+      mountPath: /app/backend/app/vectorstore
+      sizeGB: 1
+      # NOTE: this only persists the vectorstore path. Uploaded raw
+      # files live at /app/backend/uploads - add a second disk mount
+      # there too if you need uploaded files to survive redeploys.
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false
+      - key: API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        value: https://your-app.vercel.app  # UPDATE after your Vercel deploy
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: chat-redis
+          property: connectionString
+      - key: GMAIL_CLIENT_ID
+        sync: false
+      - key: GMAIL_CLIENT_SECRET
+        sync: false
+      - key: GMAIL_REDIRECT_URI
+        value: https://chat-backend.onrender.com/auth/gmail/callback  # UPDATE with your real Render URL
+      - key: MAX_REQUESTS_PER_MINUTE
+        value: "20"
+
+  - type: redis
+    name: chat-redis
+    plan: starter
+    ipAllowList: []  # only accessible from other services in this Render account

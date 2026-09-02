@@ -1,0 +1,24 @@
+# CPU-only torch, installed via this index BEFORE sentence-transformers
+# would otherwise pull the full CUDA/GPU build as a dependency. Cuts the
+# install from ~2GB+ down to ~200MB - the difference between fitting on
+# Render's smaller plans and not.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+
+fastapi
+uvicorn
+google-genai
+python-dotenv
+python-multipart
+pypdf
+chromadb
+sentence-transformers
+tavily-python
+redis==8.0.0
+python-docx==1.2.0
+Pillow==12.2.0
+pytesseract==0.3.13
+requests
+google-auth
+google-auth-oauthlib
+google-api-python-client

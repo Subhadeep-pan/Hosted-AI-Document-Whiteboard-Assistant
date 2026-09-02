@@ -1,0 +1,23 @@
+# --- Secrets - NEVER commit these ---
+backend/.env
+frontend/.env
+.env
+
+# --- Python ---
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# --- Node ---
+node_modules/
+frontend/dist/
+
+# --- Local data (rebuilds automatically at runtime) ---
+backend/app/vectorstore/chroma_db/
+backend/uploads/pdfs/
+
+# --- OS / editor ---
+.DS_Store
+.vscode/
+.idea/
