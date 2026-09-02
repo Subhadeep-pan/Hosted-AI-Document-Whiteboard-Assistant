@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8ddc0bc (prepare backend for Render)
 export default function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center text-center mt-24">
