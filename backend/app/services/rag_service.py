@@ -1,4 +1,6 @@
-from backend.app.services.embedding_service import model
+from backend.app.services.embedding_service import (
+    create_query_embedding
+)
 
 from backend.app.services.chroma_service import (
     collection
@@ -6,11 +8,13 @@ from backend.app.services.chroma_service import (
 
 
 def retrieve_context(question, session_id):
-    """UPGRADED: query is now scoped to session_id via `where`, so
-    retrieval only ever searches documents THIS session uploaded -
-    never another user's."""
+    """
+    Retrieve relevant document chunks for the current session.
+    Uses the shared lazy-loaded embedding model to avoid
+    keeping a separate model reference in this service.
+    """
 
-    query_embedding = model.encode(
+    query_embedding = create_query_embedding(
         question
     )
 
@@ -19,7 +23,9 @@ def retrieve_context(question, session_id):
             query_embedding.tolist()
         ],
         n_results=5,
-        where={"session_id": session_id},
+        where={
+            "session_id": session_id
+        },
     )
 
     documents = results["documents"][0]
