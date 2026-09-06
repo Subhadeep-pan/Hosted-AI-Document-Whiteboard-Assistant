@@ -20,20 +20,8 @@ export const askQuestionStream = async (question, chatId, onChunk, onMeta) => {
   const url = `${baseURL}/ask/stream?question=${encodeURIComponent(question)}&chat_id=${chatId}`;
 
   const response = await fetch(url, {
-  headers: { "X-Session-Id": sessionId },
-});
-
-if (!response.ok) {
-  const errorText = await response.text();
-
-  throw new Error(
-    `Backend error ${response.status}: ${errorText}`
-  );
-}
-
-if (!response.body) {
-  throw new Error("Backend returned no response body.");
-}
+    headers: { "X-Session-Id": sessionId },
+  });
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
