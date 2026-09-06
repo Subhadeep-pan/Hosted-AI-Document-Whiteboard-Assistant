@@ -49,18 +49,27 @@ async def upload_files(
         x_session_id: str = Header(default="default"),
 ):
 
-    # UPGRADED: each session's raw files live in their own subfolder, so
-    # two different sessions uploading "resume.pdf" never overwrite each
-    # other on disk (previously they shared one flat folder).
-    session_upload_dir = os.path.join(UPLOAD_DIR, x_session_id)
-    os.makedirs(session_upload_dir, exist_ok=True)
+    # Each session has its own folder.
+    session_upload_dir = os.path.join(
+        UPLOAD_DIR,
+        x_session_id
+    )
+
+    os.makedirs(
+        session_upload_dir,
+        exist_ok=True
+    )
 
     uploaded_files = []
 
     for file in files:
 
-        file_path = f"{session_upload_dir}/{file.filename}"
+        file_path = os.path.join(
+            session_upload_dir,
+            file.filename
+        )
 
+        # Save uploaded file
         with open(
                 file_path,
                 "wb"
@@ -71,6 +80,7 @@ async def upload_files(
                 buffer
             )
 
+        # Extract text based on file type
         if file.filename.lower().endswith(
                 ".pdf"
         ):
@@ -111,20 +121,44 @@ async def upload_files(
 
             continue
 
+        # Split extracted text into chunks
         chunks = chunk_text(
             text
         )
 
-        embeddings = create_embeddings(
-            chunks
-        )
+        total_chunks = len(chunks)
 
-        store_chunks(
-            chunks,
-            embeddings,
-            file.filename,
-            x_session_id,
-        )
+        # Process chunks in small batches.
+        # This prevents all embeddings from staying
+        # in RAM at the same time.
+        batch_size = 16
+
+        for i in range(
+                0,
+                total_chunks,
+                batch_size
+        ):
+
+            batch_chunks = chunks[
+                i:i + batch_size
+            ]
+
+            # Create embeddings only for this batch
+            embeddings = create_embeddings(
+                batch_chunks
+            )
+
+            # Store this batch immediately
+            store_chunks(
+                batch_chunks,
+                embeddings,
+                file.filename,
+                x_session_id,
+            )
+
+            # Release temporary memory
+            del embeddings
+            del batch_chunks
 
         uploaded_files.append(
             {
@@ -132,9 +166,13 @@ async def upload_files(
                     file.filename,
 
                 "chunks":
-                    len(chunks)
+                    total_chunks
             }
         )
+
+        # Release extracted text and chunks
+        del text
+        del chunks
 
     return {
         "message":
