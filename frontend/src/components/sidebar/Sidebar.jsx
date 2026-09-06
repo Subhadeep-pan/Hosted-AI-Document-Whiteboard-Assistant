@@ -24,7 +24,7 @@ export default function Sidebar({
 return (
   <aside className="w-72 flex flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-4">
     <div className="flex items-center justify-between mb-5">
-      <h1 className="text-base font-semibold">AI resume assistant</h1>
+      <h1 className="text-base font-semibold">AI assistant</h1>
         <button
           onClick={onToggleDarkMode}
           className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-accent-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
