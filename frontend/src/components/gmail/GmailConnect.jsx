@@ -28,7 +28,7 @@ export default function GmailConnect() {
 
   return (
     <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm mb-3 bg-slate-100 dark:bg-slate-800/60">
-      <span className="flex items-center gap-2 truncate">
+      <span className="flex items-center gap-2 truncate text-slate-900 dark:text-slate-100">
         <FaEnvelope size={12} className={connected ? "text-green-500" : "text-slate-400"} />
         Gmail {connected ? "connected" : "not connected"}
       </span>
